@@ -25,11 +25,14 @@ exports.handler = function(context, event, callback) {
             const nextNumber = numbers[currentNumberIndex + 1];
             url = '/hunt?nextNumber=' + encodeURIComponent(nextNumber) + '&PHONE_NUMBERS=' + encodeURIComponent(PHONE_NUMBERS);
         }
-        const dial = response.dial({ action: 'https://' + context.DOMAIN_NAME + url });
+        const dial = response.dial({
+            action: 'https://' + context.DOMAIN_NAME + url,
+            timeout: 10,
+        });
 
         if (numberToDial.indexOf('@') > 0) {
             dial.sip(numberToDial);
-        } else if (numberToDial.indexOf('+') > 0) {
+        } else if (numberToDial.indexOf('+') === 0) {
             dial.number(numberToDial);
         }
         else {
