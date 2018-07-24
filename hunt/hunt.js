@@ -1,28 +1,32 @@
 exports.handler = function(context, event, callback) {
-  const numbers = context.PHONE_NUMBERS.split(',').map(number => number.trim());
-  const response = new Twilio.twiml.VoiceResponse();
-  if (event.DialCallStatus === 'complete') {
-    // Call was answered and completed
-    response.hangup();
-  } else if (event.finished === 'true') {
-    if (context.FINAL_URL) {
-      response.redirect(context.FINAL_URL);
+    const PHONE_NUMBERS = context.PHONE_NUMBERS || event.PHONE_NUMBERS;
+    const FINAL_URL = context.FINAL_URL || event.FINAL_URL;
+
+    const numbers = PHONE_NUMBERS.split(',').map(number => number.trim());
+    const response = new Twilio.twiml.VoiceResponse();
+
+    if (event.DialCallStatus === 'complete') {
+        // Call was answered and completed
+        response.hangup();
+    } else if (event.finished === 'true') {
+        if (FINAL_URL) {
+            response.redirect(FINAL_URL);
+        } else {
+            response.hangup();
+        }
     } else {
-      response.hangup();
+        const numberToDial = event.nextNumber ? event.nextNumber : numbers[0];
+        const currentNumberIndex = numbers.indexOf(numberToDial);
+        let url;
+        if (currentNumberIndex + 1 === numbers.length) {
+            // No more numbers to call after this.
+            url = '/hunt?finished=true&PHONE_NUMBERS=' + encodeURIComponent(PHONE_NUMBERS);
+        } else {
+            const nextNumber = numbers[currentNumberIndex + 1];
+            url = '/hunt?nextNumber=' + encodeURIComponent(nextNumber) + '&PHONE_NUMBERS=' + encodeURIComponent(PHONE_NUMBERS);
+        }
+        const dial = response.dial({ action: 'https://' + context.DOMAIN_NAME + url });
+        dial.number(numberToDial);
     }
-  } else {
-    const numberToDial = event.nextNumber ? event.nextNumber : numbers[0];
-    const currentNumberIndex = numbers.indexOf(numberToDial);
-    let url;
-    if (currentNumberIndex + 1 === numbers.length) {
-      // No more numbers to call after this.
-      url = '/hunt?finished=true';
-    } else {
-      const nextNumber = numbers[currentNumberIndex + 1];
-      url = '/hunt?nextNumber=' + encodeURIComponent(nextNumber);
-    }
-    const dial = response.dial({ action: url });
-    dial.number(numberToDial);
-  }
-  callback(null, response);
+    callback(null, response);
 };
