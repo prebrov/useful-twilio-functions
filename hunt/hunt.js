@@ -26,7 +26,12 @@ exports.handler = function(context, event, callback) {
             url = '/hunt?nextNumber=' + encodeURIComponent(nextNumber) + '&PHONE_NUMBERS=' + encodeURIComponent(PHONE_NUMBERS);
         }
         const dial = response.dial({ action: 'https://' + context.DOMAIN_NAME + url });
-        dial.number(numberToDial);
+
+        if (numberToDial.indexOf('@') > 0) {
+            dial.sip(numberToDial);
+        } else {
+            dial.number(numberToDial);
+        }
     }
     callback(null, response);
 };
