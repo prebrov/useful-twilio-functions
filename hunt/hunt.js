@@ -29,8 +29,11 @@ exports.handler = function(context, event, callback) {
 
         if (numberToDial.indexOf('@') > 0) {
             dial.sip(numberToDial);
-        } else {
+        } else if (numberToDial.indexOf('+') > 0) {
             dial.number(numberToDial);
+        }
+        else {
+            dial.sim(numberToDial);
         }
     }
     callback(null, response);
